@@ -117,7 +117,7 @@ class LabelEditorDialog(ctk.CTkToplevel):
             "font_size": line_styles_dict["line1"]["font_size"],
             "bold": line_styles_dict["line1"]["bold"],
             "alignment": line_styles_dict["line1"]["alignment"],
-            "line_styles": line_styles_dict
+            "line_styles_dict": line_styles_dict
         }
         self.on_save(self.position, data)
         self.destroy()

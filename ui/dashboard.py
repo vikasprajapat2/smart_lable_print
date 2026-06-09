@@ -260,25 +260,42 @@ class Dashboard(ctk.CTk):
             pos_lbl = tk.Label(inner, text=str(pos), bg=bg_col, fg="#999999", font=("Segoe UI", 8, "bold"))
             pos_lbl.place(x=0, y=0)
 
-            # Content preview
-            lines = [lbl.get(f"line{i}", "") for i in range(1, 5)]
-            preview = "\n".join(l for l in lines if l.strip())
-            
-            font_size = min(16, int(lbl.get("font_size", 10)))
-            bold = bool(lbl.get("bold", 0))
-            font_cfg = ("Segoe UI", font_size, "bold") if bold else ("Segoe UI", font_size)
-            justify_map = {"left": "left", "center": "center", "right": "right"}
-            justify = justify_map.get(lbl.get("alignment", "center"), "center")
+            # Content preview (per-line styles)
+            line_styles_dict = lbl.get("line_styles_dict", {})
+            fallback_size = int(lbl.get("font_size", 10))
+            fallback_bold = bool(lbl.get("bold", 0))
+            fallback_align = lbl.get("alignment", "center")
 
-            if not preview:
-                preview = "Double-click to edit..."
-                font_cfg = ("Segoe UI", 10, "italic")
-                fg_col = "#cccccc"
+            preview_lines = []
+            for i in range(1, 5):
+                text = lbl.get(f"line{i}", "").strip()
+                if text:
+                    style = line_styles_dict.get(f"line{i}", {})
+                    fsize = min(16, int(style.get("font_size", fallback_size)))
+                    bold = bool(style.get("bold", fallback_bold))
+                    align = style.get("alignment", fallback_align)
+                    preview_lines.append((text, fsize, bold, align))
 
-            # Pack to fit perfectly inside inner frame without clipping top edge
-            content_lbl = tk.Label(inner, text=preview, bg=bg_col, fg=fg_col,
-                                    font=font_cfg, wraplength=260, justify=justify)
-            content_lbl.pack(expand=True, fill="both")
+            if not preview_lines:
+                content_lbl = tk.Label(inner, text="Double-click to edit...", bg=bg_col, fg="#cccccc",
+                                        font=("Segoe UI", 10, "italic"), wraplength=260, justify="center")
+                content_lbl.pack(expand=True, fill="both")
+            else:
+                # Pack an inner container to center vertically
+                v_center = tk.Frame(inner, bg=bg_col)
+                v_center.pack(expand=True, fill="both")
+                # Add flexible space above
+                tk.Frame(v_center, bg=bg_col).pack(expand=True, fill="both")
+                
+                for text, fsize, bold, align in preview_lines:
+                    font_cfg = ("Segoe UI", fsize, "bold") if bold else ("Segoe UI", fsize)
+                    justify_map = {"left": "w", "center": "center", "right": "e"}
+                    anchor = justify_map.get(align, "center")
+                    tk.Label(v_center, text=text, bg=bg_col, fg=fg_col,
+                             font=font_cfg, wraplength=260, anchor=anchor).pack(fill="x")
+                             
+                # Add flexible space below
+                tk.Frame(v_center, bg=bg_col).pack(expand=True, fill="both")
 
             status = self._label_status(pos)
             if status != "EMPTY":
@@ -492,7 +509,7 @@ class Dashboard(ctk.CTk):
             self.current_sheet_id, pos,
             data["line1"], data["line2"], data["line3"], data["line4"],
             data["font_size"], data["bold"], data["alignment"],
-            data.get("line_styles", {})
+            data.get("line_styles_dict", {})
         )
         self._refresh_grid()
         self._set_status(f"Label {pos} updated.")
