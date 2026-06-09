@@ -62,33 +62,50 @@ def build_pdf(labels_data, output_path, page_margins=None):
         c.setLineWidth(0.5)
         c.rect(x, y, lw, lh, stroke=1, fill=0)
 
-        # Text
-        font_size = int(lbl.get("font_size", 10))
-        bold = lbl.get("bold", 0)
-        font_name = "Helvetica-Bold" if bold else "Helvetica"
-        alignment = lbl.get("alignment", "center")
+        # Text processing with per-line styles
+        line_styles_dict = lbl.get("line_styles_dict", {})
+        fallback_size = int(lbl.get("font_size", 10))
+        fallback_bold = bool(lbl.get("bold", 0))
+        fallback_align = lbl.get("alignment", "center")
 
-        lines = [
-            lbl.get("line1", ""),
-            lbl.get("line2", ""),
-            lbl.get("line3", ""),
-            lbl.get("line4", ""),
-        ]
-        lines = [l for l in lines if l.strip()]
+        lines_data = []
+        total_text_h = 0
 
-        if lines:
-            total_text_h = len(lines) * (font_size + 2)
-            start_y = y + lh / 2 + total_text_h / 2 - font_size
+        for i in range(1, 5):
+            text = lbl.get(f"line{i}", "").strip()
+            if text:
+                style = line_styles_dict.get(f"line{i}", {})
+                fsize = int(style.get("font_size", fallback_size))
+                bold = bool(style.get("bold", fallback_bold))
+                align = style.get("alignment", fallback_align)
+                lines_data.append({"text": text, "size": fsize, "bold": bold, "align": align})
+                total_text_h += (fsize + 2)
 
-            for i, line in enumerate(lines):
-                ty = start_y - i * (font_size + 2)
-                c.setFont(font_name, font_size)
-                if alignment == "left":
-                    c.drawString(x + 3, ty, line)
-                elif alignment == "right":
-                    c.drawRightString(x + lw - 3, ty, line)
+        if lines_data:
+            # start_y is the top edge of the text block
+            current_y = y + lh / 2 + total_text_h / 2
+
+            for line_data in lines_data:
+                fsize = line_data["size"]
+                bold = line_data["bold"]
+                align = line_data["align"]
+                text = line_data["text"]
+
+                font_name = "Helvetica-Bold" if bold else "Helvetica"
+                c.setFont(font_name, fsize)
+
+                # Move to the baseline for drawing
+                current_y -= fsize
+                
+                if align == "left":
+                    c.drawString(x + 3, current_y, text)
+                elif align == "right":
+                    c.drawRightString(x + lw - 3, current_y, text)
                 else:
-                    c.drawCentredString(x + lw / 2, ty, line)
+                    c.drawCentredString(x + lw / 2, current_y, text)
+
+                # 2pt spacing
+                current_y -= 2
 
     c.save()
     return output_path

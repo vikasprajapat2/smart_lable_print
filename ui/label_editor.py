@@ -7,7 +7,7 @@ class LabelEditorDialog(ctk.CTkToplevel):
         super().__init__(parent)
         self.title(f"Edit Label #{position}")
         self.resizable(False, False)
-        self.geometry("450x450")
+        self.geometry("650x450")
         
         # Make modal
         self.transient(parent)
@@ -26,39 +26,45 @@ class LabelEditorDialog(ctk.CTkToplevel):
         lines_frame.pack(fill="x", padx=20)
 
         self.line_vars = []
+        self.line_styles = [] # list of (size_var, bold_var, align_var) tuples
+
+        # Parse existing line styles or fallback
+        line_styles_dict = label_data.get("line_styles_dict", {})
+        fallback_size = int(label_data.get("font_size", 10))
+        fallback_bold = bool(label_data.get("bold", 0))
+        fallback_align = label_data.get("alignment", "center")
+
         for i in range(1, 5):
-            row = ctk.CTkFrame(lines_frame, fg_color="transparent")
-            row.pack(fill="x", pady=5)
-            ctk.CTkLabel(row, text=f"Line {i}:", width=60, anchor="w", font=ctk.CTkFont("Segoe UI", 12)).pack(side="left")
+            line_key = f"line{i}"
+            style = line_styles_dict.get(line_key, {})
             
-            var = tk.StringVar(value=label_data.get(f"line{i}", ""))
-            entry = ctk.CTkEntry(row, textvariable=var, font=ctk.CTkFont("Segoe UI", 12))
-            entry.pack(side="left", fill="x", expand=True, padx=(10, 0))
+            row = ctk.CTkFrame(lines_frame, fg_color="transparent")
+            row.pack(fill="x", pady=8)
+            ctk.CTkLabel(row, text=f"Line {i}:", width=50, anchor="w", font=ctk.CTkFont("Segoe UI", 12)).pack(side="left")
+            
+            var = tk.StringVar(value=label_data.get(line_key, ""))
+            entry = ctk.CTkEntry(row, textvariable=var, width=150, font=ctk.CTkFont("Segoe UI", 12))
+            entry.pack(side="left", fill="x", expand=True, padx=(5, 10))
             self.line_vars.append(var)
             
             if i == 1:
                 entry.focus_set()
 
-        # Formatting
-        fmt_frame = ctk.CTkFrame(self, fg_color="transparent")
-        fmt_frame.pack(fill="x", padx=20, pady=(20, 10))
+            # Formatting Controls for this line
+            ctk.CTkLabel(row, text="Size:", font=ctk.CTkFont("Segoe UI", 11)).pack(side="left")
+            size_var = tk.StringVar(value=str(style.get("font_size", fallback_size)))
+            size_entry = ctk.CTkEntry(row, textvariable=size_var, width=40, font=ctk.CTkFont("Segoe UI", 11))
+            size_entry.pack(side="left", padx=(5, 15))
 
-        # Font size
-        ctk.CTkLabel(fmt_frame, text="Font Size:", font=ctk.CTkFont("Segoe UI", 12)).pack(side="left")
-        self.font_size_var = tk.StringVar(value=str(int(label_data.get("font_size", 10))))
-        size_entry = ctk.CTkEntry(fmt_frame, textvariable=self.font_size_var, width=50, font=ctk.CTkFont("Segoe UI", 12))
-        size_entry.pack(side="left", padx=(10, 20))
+            bold_var = ctk.BooleanVar(value=bool(style.get("bold", fallback_bold)))
+            bold_cb = ctk.CTkCheckBox(row, text="B", variable=bold_var, width=30, font=ctk.CTkFont("Segoe UI", 11, "bold"))
+            bold_cb.pack(side="left", padx=(0, 15))
 
-        # Bold
-        self.bold_var = ctk.BooleanVar(value=bool(label_data.get("bold", 0)))
-        bold_cb = ctk.CTkCheckBox(fmt_frame, text="Bold", variable=self.bold_var, font=ctk.CTkFont("Segoe UI", 12))
-        bold_cb.pack(side="left", padx=(0, 20))
+            align_var = ctk.StringVar(value=style.get("alignment", fallback_align))
+            align_opt = ctk.CTkOptionMenu(row, variable=align_var, values=["left", "center", "right"], width=80, font=ctk.CTkFont("Segoe UI", 11))
+            align_opt.pack(side="left")
 
-        # Alignment
-        ctk.CTkLabel(fmt_frame, text="Align:", font=ctk.CTkFont("Segoe UI", 12)).pack(side="left", padx=(0, 10))
-        self.align_var = ctk.StringVar(value=label_data.get("alignment", "center"))
-        align_opt = ctk.CTkOptionMenu(fmt_frame, variable=self.align_var, values=["left", "center", "right"], width=100, font=ctk.CTkFont("Segoe UI", 12))
-        align_opt.pack(side="left")
+            self.line_styles.append((size_var, bold_var, align_var))
 
         # Buttons
         btn_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -82,7 +88,7 @@ class LabelEditorDialog(ctk.CTkToplevel):
         self.update_idletasks()
         pw = self.master.winfo_rootx() + self.master.winfo_width() // 2
         ph = self.master.winfo_rooty() + self.master.winfo_height() // 2
-        w, h = 450, 450
+        w, h = 650, 400
         self.geometry(f"+{pw - w//2}+{ph - h//2}")
 
     def _clear(self):
@@ -90,19 +96,28 @@ class LabelEditorDialog(ctk.CTkToplevel):
             v.set("")
 
     def _save(self):
-        try:
-            fsize = int(self.font_size_var.get())
-        except ValueError:
-            fsize = 10
+        line_styles_dict = {}
+        for i in range(4):
+            sz_var, b_var, a_var = self.line_styles[i]
+            try:
+                fsize = int(sz_var.get())
+            except ValueError:
+                fsize = 10
+            line_styles_dict[f"line{i+1}"] = {
+                "font_size": fsize,
+                "bold": 1 if b_var.get() else 0,
+                "alignment": a_var.get()
+            }
 
         data = {
             "line1": self.line_vars[0].get(),
             "line2": self.line_vars[1].get(),
             "line3": self.line_vars[2].get(),
             "line4": self.line_vars[3].get(),
-            "font_size": fsize,
-            "bold": 1 if self.bold_var.get() else 0,
-            "alignment": self.align_var.get(),
+            "font_size": line_styles_dict["line1"]["font_size"],
+            "bold": line_styles_dict["line1"]["bold"],
+            "alignment": line_styles_dict["line1"]["alignment"],
+            "line_styles": line_styles_dict
         }
         self.on_save(self.position, data)
         self.destroy()

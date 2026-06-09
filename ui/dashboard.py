@@ -449,7 +449,8 @@ class Dashboard(ctk.CTk):
                 lbl.get("line1", ""), lbl.get("line2", ""),
                 lbl.get("line3", ""), lbl.get("line4", ""),
                 lbl.get("font_size", 10), lbl.get("bold", 0),
-                lbl.get("alignment", "center")
+                lbl.get("alignment", "center"),
+                lbl.get("line_styles_dict", {})
             )
         self._set_status("Sheet saved.")
         CTkMessagebox(title="Saved", message="Sheet saved successfully.", icon='info')
@@ -490,7 +491,8 @@ class Dashboard(ctk.CTk):
         db.save_label(
             self.current_sheet_id, pos,
             data["line1"], data["line2"], data["line3"], data["line4"],
-            data["font_size"], data["bold"], data["alignment"]
+            data["font_size"], data["bold"], data["alignment"],
+            data.get("line_styles", {})
         )
         self._refresh_grid()
         self._set_status(f"Label {pos} updated.")

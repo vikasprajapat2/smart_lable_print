@@ -43,9 +43,17 @@ def init_db():
             alignment TEXT DEFAULT 'center',
             printed INTEGER DEFAULT 0,
             printed_date DATETIME,
+            line_styles TEXT DEFAULT '{}',
             FOREIGN KEY(sheet_id) REFERENCES sheets(id)
         )
     """)
+    
+    # Migration to add line_styles to existing database
+    try:
+        c.execute("ALTER TABLE labels ADD COLUMN line_styles TEXT DEFAULT '{}'")
+    except sqlite3.OperationalError:
+        pass # Column already exists
+        
     c.execute("""
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
@@ -77,7 +85,7 @@ def create_sheet(name):
     sheet_id = c.lastrowid
     for pos in range(1, 17):
         c.execute("""INSERT INTO labels (sheet_id, position, line1, line2, line3, line4,
-                     font_size, bold, alignment, printed) VALUES (?,?,?,?,?,?,10,0,'center',0)""",
+                     font_size, bold, alignment, printed, line_styles) VALUES (?,?,?,?,?,?,10,0,'center',0,'{}')""",
                   (sheet_id, pos, '', '', '', ''))
     conn.commit()
     conn.close()
@@ -127,14 +135,26 @@ def get_labels(sheet_id):
     c = conn.cursor()
     rows = c.execute("SELECT * FROM labels WHERE sheet_id=? ORDER BY position", (sheet_id,)).fetchall()
     conn.close()
-    return [dict(r) for r in rows]
+    result = []
+    for r in rows:
+        d = dict(r)
+        # Parse line_styles
+        try:
+            d["line_styles_dict"] = json.loads(d.get("line_styles", "{}"))
+        except:
+            d["line_styles_dict"] = {}
+        result.append(d)
+    return result
 
-def save_label(sheet_id, position, line1, line2, line3, line4, font_size, bold, alignment):
+def save_label(sheet_id, position, line1, line2, line3, line4, font_size, bold, alignment, line_styles=None):
+    if line_styles is None:
+        line_styles = {}
+        
     conn = get_connection()
     conn.execute("""UPDATE labels SET line1=?, line2=?, line3=?, line4=?,
-                    font_size=?, bold=?, alignment=?
+                    font_size=?, bold=?, alignment=?, line_styles=?
                     WHERE sheet_id=? AND position=?""",
-                 (line1, line2, line3, line4, font_size, bold, alignment, sheet_id, position))
+                 (line1, line2, line3, line4, font_size, bold, alignment, json.dumps(line_styles), sheet_id, position))
     conn.commit()
     conn.close()
     update_sheet_timestamp(sheet_id)

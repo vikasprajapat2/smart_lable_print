@@ -122,29 +122,54 @@ class PrintPreviewWindow(ctk.CTkToplevel):
                 c.create_rectangle(x, y, x + label_w, y + max(4, int(4 * self.zoom)),
                                     fill="#3b82f6", outline="")
 
-            # Text
-            lines = [lbl.get(f"line{i}", "") for i in range(1, 5)]
-            lines = [l for l in lines if l.strip()]
-            font_size = max(6, min(14, int(lbl.get("font_size", 10)) - 2))
-            bold = bool(lbl.get("bold", 0))
-            alignment = lbl.get("alignment", "center")
-            anchor_map = {"left": "w", "center": "center", "right": "e"}
-            anchor = anchor_map.get(alignment, "center")
+            # Text processing with per-line styles
+            line_styles_dict = lbl.get("line_styles_dict", {})
+            fallback_size = int(lbl.get("font_size", 10))
+            fallback_bold = bool(lbl.get("bold", 0))
+            fallback_align = lbl.get("alignment", "center")
 
-            if alignment == "left":
-                tx = x + int(6 * self.zoom)
-            elif alignment == "right":
-                tx = x + label_w - int(6 * self.zoom)
-            else:
-                tx = x + label_w // 2
-
-            total_h = len(lines) * (font_size + 2)
-            start_ty = y + label_h // 2 - total_h // 2 + font_size // 2
-            font_cfg = ("Segoe UI", font_size, "bold") if bold else ("Segoe UI", font_size)
-
-            for i, line in enumerate(lines):
-                ty = start_ty + i * (font_size + 2)
-                c.create_text(tx, ty, text=line, font=font_cfg, fill="#111", anchor=anchor)
+            lines_data = []
+            total_text_h = 0
+            
+            for i in range(1, 5):
+                text = lbl.get(f"line{i}", "").strip()
+                if text:
+                    style = line_styles_dict.get(f"line{i}", {})
+                    raw_size = int(style.get("font_size", fallback_size))
+                    # Scale for preview visually
+                    preview_size = max(6, min(14, raw_size - 2))
+                    bold = bool(style.get("bold", fallback_bold))
+                    align = style.get("alignment", fallback_align)
+                    
+                    lines_data.append({"text": text, "size": preview_size, "bold": bold, "align": align})
+                    total_text_h += (preview_size + 2)
+            
+            if lines_data:
+                # start drawing from top to bottom
+                current_y = y + label_h // 2 - total_text_h // 2
+                anchor_map = {"left": "w", "center": "center", "right": "e"}
+                
+                for line_data in lines_data:
+                    preview_size = line_data["size"]
+                    bold = line_data["bold"]
+                    align = line_data["align"]
+                    text = line_data["text"]
+                    
+                    font_cfg = ("Segoe UI", preview_size, "bold") if bold else ("Segoe UI", preview_size)
+                    anchor = anchor_map.get(align, "center")
+                    
+                    if align == "left":
+                        tx = x + int(6 * self.zoom)
+                    elif align == "right":
+                        tx = x + label_w - int(6 * self.zoom)
+                    else:
+                        tx = x + label_w // 2
+                        
+                    # move to vertical center of the line for tk anchor="center" or "w"/"e" 
+                    ty = current_y + preview_size // 2
+                    
+                    c.create_text(tx, ty, text=text, font=font_cfg, fill="#111", anchor=anchor)
+                    current_y += (preview_size + 2)
 
             c.create_text(x + label_w - int(6 * self.zoom), y + int(6 * self.zoom),
                           text=str(pos), font=("Segoe UI", max(6, int(6 * self.zoom))),
