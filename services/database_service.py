@@ -64,10 +64,10 @@ def init_db():
     defaults = [
         ("default_font_size", "10"),
         ("default_alignment", "center"),
-        ("margin_top", "10"),
-        ("margin_bottom", "10"),
-        ("margin_left", "10"),
-        ("margin_right", "10"),
+        ("margin_top", "12.9"),
+        ("margin_bottom", "12.9"),
+        ("margin_left", "4.2"),
+        ("margin_right", "4.2"),
         ("default_printer", ""),
     ]
     for k, v in defaults:
