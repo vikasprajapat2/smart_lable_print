@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+database/
+backups/
+.venv/
+venv/
+env/
+.idea/
+.vscode/
