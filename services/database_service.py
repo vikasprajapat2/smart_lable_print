@@ -1,9 +1,15 @@
-import sqlite3
+import sys
 import os
 import json
+import sqlite3
 from datetime import datetime
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "database", "labels.db")
+if getattr(sys, 'frozen', False):
+    APP_DIR = os.path.dirname(sys.executable)
+else:
+    APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+DB_PATH = os.path.join(APP_DIR, "database", "labels.db")
 
 def get_connection():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)

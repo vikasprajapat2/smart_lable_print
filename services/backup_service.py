@@ -2,8 +2,15 @@ import shutil
 import os
 from datetime import datetime
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "database", "labels.db")
-BACKUP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "backups")
+import sys
+
+if getattr(sys, 'frozen', False):
+    APP_DIR = os.path.dirname(sys.executable)
+else:
+    APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+DB_PATH = os.path.join(APP_DIR, "database", "labels.db")
+BACKUP_DIR = os.path.join(APP_DIR, "backups")
 
 def backup_database(custom_path=None):
     os.makedirs(BACKUP_DIR, exist_ok=True)
