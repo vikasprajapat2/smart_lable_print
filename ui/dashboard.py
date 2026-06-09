@@ -506,7 +506,19 @@ class Dashboard(ctk.CTk):
             return
         labels = list(self.labels_data.values())
         labels = sorted(labels, key=lambda l: l.get("position", 0))
-        PrintPreviewWindow(self, labels, self.selected_positions)
+        print_labels = []
+        for pos in range(1, 17):
+            lbl = dict(self.labels_data.get(pos, {}))
+            lbl["selected"] = pos in self.selected_positions
+            print_labels.append(lbl)
+        page_margins = {
+            'margin_top': db.get_setting("margin_top", 10),
+            'margin_bottom': db.get_setting("margin_bottom", 10),
+            'margin_left': db.get_setting("margin_left", 10),
+            'margin_right': db.get_setting("margin_right", 10)
+        }
+        from ui.preview import PrintPreviewWindow
+        PrintPreviewWindow(self, print_labels, list(self.selected_positions), page_margins=page_margins)
 
     def _print_selected(self):
         if not self.current_sheet_id:
@@ -532,7 +544,14 @@ class Dashboard(ctk.CTk):
             lbl["selected"] = pos in self.selected_positions
             print_labels.append(lbl)
 
-        ok, msg = print_service.print_labels(print_labels)
+        page_margins = {
+            'margin_top': db.get_setting("margin_top", 10),
+            'margin_bottom': db.get_setting("margin_bottom", 10),
+            'margin_left': db.get_setting("margin_left", 10),
+            'margin_right': db.get_setting("margin_right", 10)
+        }
+
+        ok, msg = print_service.print_labels(print_labels, page_margins=page_margins)
 
         if ok:
             for pos in self.selected_positions:
@@ -574,7 +593,13 @@ class Dashboard(ctk.CTk):
             print_labels.append(lbl)
 
         try:
-            print_service.build_pdf(print_labels, path)
+            page_margins = {
+                'margin_top': db.get_setting("margin_top", 10),
+                'margin_bottom': db.get_setting("margin_bottom", 10),
+                'margin_left': db.get_setting("margin_left", 10),
+                'margin_right': db.get_setting("margin_right", 10)
+            }
+            print_service.build_pdf(print_labels, path, page_margins=page_margins)
             
             # Optionally mark as printed since they exported it
             for pos in self.selected_positions:

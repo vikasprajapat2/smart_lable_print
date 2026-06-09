@@ -19,7 +19,7 @@ MARGIN_T_PX = int(((A4_H_MM - ROWS * LABEL_H_MM) / 2) * SCALE)
 
 
 class PrintPreviewWindow(ctk.CTkToplevel):
-    def __init__(self, parent, labels_data, selected_positions):
+    def __init__(self, parent, labels_data, selected_positions, page_margins=None):
         super().__init__(parent)
         self.title("Print Preview – ST-16")
         self.resizable(True, True)
@@ -31,6 +31,7 @@ class PrintPreviewWindow(ctk.CTkToplevel):
         self.zoom = 1.0
         self.labels_data = labels_data
         self.selected_positions = selected_positions
+        self.page_margins = page_margins
         self._build_ui(labels_data, selected_positions)
         self._center()
 
@@ -74,9 +75,9 @@ class PrintPreviewWindow(ctk.CTkToplevel):
         hsb.pack(side="bottom", fill="x")
         self.canvas.pack(side="left", fill="both", expand=True)
 
-        self._draw_page(labels_data, selected_positions)
+        self._draw_page(labels_data, selected_positions, self.page_margins)
 
-    def _draw_page(self, labels_data, selected_positions):
+    def _draw_page(self, labels_data, selected_positions, page_margins=None):
         c = self.canvas
         c.delete("all")
         ox, oy = 20, 20  # page offset on canvas
@@ -86,8 +87,16 @@ class PrintPreviewWindow(ctk.CTkToplevel):
         page_h = int(A4_H_MM * scale)
         label_w = int(LABEL_W_MM * scale)
         label_h = int(LABEL_H_MM * scale)
-        margin_l = int(((A4_W_MM - COLS * LABEL_W_MM) / 2) * scale)
-        margin_t = int(((A4_H_MM - ROWS * LABEL_H_MM) / 2) * scale)
+        
+        if page_margins:
+            margin_l_mm = float(page_margins.get("margin_left", (A4_W_MM - COLS * LABEL_W_MM) / 2))
+            margin_t_mm = float(page_margins.get("margin_top", (A4_H_MM - ROWS * LABEL_H_MM) / 2))
+        else:
+            margin_l_mm = (A4_W_MM - COLS * LABEL_W_MM) / 2
+            margin_t_mm = (A4_H_MM - ROWS * LABEL_H_MM) / 2
+            
+        margin_l = int(margin_l_mm * scale)
+        margin_t = int(margin_t_mm * scale)
 
         # Shadow
         c.create_rectangle(ox + 5, oy + 5, ox + page_w + 5, oy + page_h + 5, fill="#111111", outline="")
@@ -183,17 +192,17 @@ class PrintPreviewWindow(ctk.CTkToplevel):
     def _zoom_in(self):
         self.zoom = min(self.zoom + 0.15, 2.5)
         self.zoom_label.configure(text=f"{int(self.zoom * 100)}%")
-        self._draw_page(self.labels_data, self.selected_positions)
+        self._draw_page(self.labels_data, self.selected_positions, self.page_margins)
 
     def _zoom_out(self):
         self.zoom = max(self.zoom - 0.15, 0.4)
         self.zoom_label.configure(text=f"{int(self.zoom * 100)}%")
-        self._draw_page(self.labels_data, self.selected_positions)
+        self._draw_page(self.labels_data, self.selected_positions, self.page_margins)
 
     def _fit_page(self):
         self.zoom = 0.8
         self.zoom_label.configure(text=f"{int(self.zoom * 100)}%")
-        self._draw_page(self.labels_data, self.selected_positions)
+        self._draw_page(self.labels_data, self.selected_positions, self.page_margins)
 
     def _center(self):
         self.update_idletasks()

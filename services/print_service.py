@@ -38,8 +38,13 @@ def build_pdf(labels_data, output_path, page_margins=None):
     if not HAS_REPORTLAB:
         raise RuntimeError("reportlab is not installed")
 
-    ml = MARGIN_LEFT_MM * mm
-    mt = MARGIN_TOP_MM * mm
+    if page_margins:
+        ml = float(page_margins.get('margin_left', MARGIN_LEFT_MM)) * mm
+        mt = float(page_margins.get('margin_top', MARGIN_TOP_MM)) * mm
+    else:
+        ml = MARGIN_LEFT_MM * mm
+        mt = MARGIN_TOP_MM * mm
+        
     lw = LABEL_W_MM * mm
     lh = LABEL_H_MM * mm
 
@@ -57,10 +62,7 @@ def build_pdf(labels_data, output_path, page_margins=None):
         # PDF y=0 is bottom; flip
         y = page_h - mt - (row + 1) * lh
 
-        # Draw border
-        c.setStrokeColorRGB(0.7, 0.7, 0.7)
-        c.setLineWidth(0.5)
-        c.rect(x, y, lw, lh, stroke=1, fill=0)
+        # Removed boundary box drawing (no c.rect)
 
         # Text processing with per-line styles
         line_styles_dict = lbl.get("line_styles_dict", {})
@@ -111,13 +113,13 @@ def build_pdf(labels_data, output_path, page_margins=None):
     return output_path
 
 
-def print_labels(labels_data, printer_name=None):
+def print_labels(labels_data, printer_name=None, page_margins=None):
     """Build a PDF and send it to the printer."""
     tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
     tmp.close()
     pdf_path = tmp.name
 
-    build_pdf(labels_data, pdf_path)
+    build_pdf(labels_data, pdf_path, page_margins)
 
     try:
         os.startfile(pdf_path)
