@@ -1,12 +1,15 @@
 import tkinter as tk
 import customtkinter as ctk
 
-# ST-16 proportions (scaled to screen)
+# ST-16 / L-7162 proportions (scaled to screen)
 COLS, ROWS = 2, 8
 LABEL_W_MM = 99.1
 LABEL_H_MM = 33.9
 A4_W_MM = 210
 A4_H_MM = 297
+
+LABEL_GAP_X_MM = 3.39
+LABEL_GAP_Y_MM = 0.0
 
 SCALE = 2.2  # px per mm
 
@@ -14,8 +17,6 @@ A4_W_PX = int(A4_W_MM * SCALE)
 A4_H_PX = int(A4_H_MM * SCALE)
 LABEL_W_PX = int(LABEL_W_MM * SCALE)
 LABEL_H_PX = int(LABEL_H_MM * SCALE)
-MARGIN_L_PX = int(((A4_W_MM - COLS * LABEL_W_MM) / 2) * SCALE)
-MARGIN_T_PX = int(((A4_H_MM - ROWS * LABEL_H_MM) / 2) * SCALE)
 
 
 class PrintPreviewWindow(ctk.CTkToplevel):
@@ -87,13 +88,18 @@ class PrintPreviewWindow(ctk.CTkToplevel):
         page_h = int(A4_H_MM * scale)
         label_w = int(LABEL_W_MM * scale)
         label_h = int(LABEL_H_MM * scale)
+        gap_x = int(LABEL_GAP_X_MM * scale)
+        gap_y = int(LABEL_GAP_Y_MM * scale)
         
+        default_margin_l = (A4_W_MM - (COLS * LABEL_W_MM) - ((COLS - 1) * LABEL_GAP_X_MM)) / 2
+        default_margin_t = (A4_H_MM - (ROWS * LABEL_H_MM) - ((ROWS - 1) * LABEL_GAP_Y_MM)) / 2
+
         if page_margins:
-            margin_l_mm = float(page_margins.get("margin_left", (A4_W_MM - COLS * LABEL_W_MM) / 2))
-            margin_t_mm = float(page_margins.get("margin_top", (A4_H_MM - ROWS * LABEL_H_MM) / 2))
+            margin_l_mm = float(page_margins.get("margin_left", default_margin_l))
+            margin_t_mm = float(page_margins.get("margin_top", default_margin_t))
         else:
-            margin_l_mm = (A4_W_MM - COLS * LABEL_W_MM) / 2
-            margin_t_mm = (A4_H_MM - ROWS * LABEL_H_MM) / 2
+            margin_l_mm = default_margin_l
+            margin_t_mm = default_margin_t
             
         margin_l = int(margin_l_mm * scale)
         margin_t = int(margin_t_mm * scale)
@@ -108,8 +114,8 @@ class PrintPreviewWindow(ctk.CTkToplevel):
         for pos in range(1, 17):
             col = (pos - 1) % COLS
             row = (pos - 1) // COLS
-            x = ox + margin_l + col * label_w
-            y = oy + margin_t + row * label_h
+            x = ox + margin_l + col * (label_w + gap_x)
+            y = oy + margin_t + row * (label_h + gap_y)
 
             lbl = labels_dict.get(pos, {})
             selected = pos in selected_positions

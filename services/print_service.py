@@ -19,15 +19,19 @@ try:
 except ImportError:
     HAS_REPORTLAB = False
 
-# ST-16 A4 label sheet format for laser, inkjet, and copier printers
+# ST-16 / L7162 A4 label sheet format
 PAGE_W_MM, PAGE_H_MM = 210, 297
 COLS, ROWS = 2, 8
 LABEL_W_MM = 99.1
 LABEL_H_MM = 33.9
 
-# Margins calculated to center 4 cols × 4 rows on A4
-MARGIN_LEFT_MM = (PAGE_W_MM - COLS * LABEL_W_MM) / 2
-MARGIN_TOP_MM = (PAGE_H_MM - ROWS * LABEL_H_MM) / 2
+# For L-7162, there is a horizontal gap between columns
+LABEL_GAP_X_MM = 3.39
+LABEL_GAP_Y_MM = 0.0
+
+# Margins calculated to center on A4
+MARGIN_LEFT_MM = (PAGE_W_MM - (COLS * LABEL_W_MM) - ((COLS - 1) * LABEL_GAP_X_MM)) / 2
+MARGIN_TOP_MM = (PAGE_H_MM - (ROWS * LABEL_H_MM) - ((ROWS - 1) * LABEL_GAP_Y_MM)) / 2
 
 
 def build_pdf(labels_data, output_path, page_margins=None):
@@ -47,6 +51,8 @@ def build_pdf(labels_data, output_path, page_margins=None):
         
     lw = LABEL_W_MM * mm
     lh = LABEL_H_MM * mm
+    gx = LABEL_GAP_X_MM * mm
+    gy = LABEL_GAP_Y_MM * mm
 
     c = canvas.Canvas(output_path, pagesize=A4)
     page_w, page_h = A4
@@ -58,9 +64,9 @@ def build_pdf(labels_data, output_path, page_margins=None):
         col = idx % COLS
         row = idx // COLS
 
-        x = ml + col * lw
+        x = ml + col * (lw + gx)
         # PDF y=0 is bottom; flip
-        y = page_h - mt - (row + 1) * lh
+        y = page_h - mt - (row * (lh + gy)) - lh
 
         # Removed boundary box drawing (no c.rect)
 
