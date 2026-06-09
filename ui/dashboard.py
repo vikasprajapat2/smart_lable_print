@@ -299,9 +299,14 @@ class Dashboard(ctk.CTk):
 
             status = self._label_status(pos)
             if status != "EMPTY":
+                # Restore top-level properties for the footer display
+                font_size = min(16, int(lbl.get("font_size", 10)))
+                is_bold = bool(lbl.get("bold", 0))
+                justify = lbl.get("alignment", "center")
+
                 # Text Details Footer (Font Size & Alignment)
                 align_icon = {"left": "⫷", "center": "≡", "right": "⫸"}.get(justify, "≡")
-                bold_txt = "B " if bold else ""
+                bold_txt = "B " if is_bold else ""
                 details_txt = f"{bold_txt}{font_size}pt {align_icon}"
                 details_lbl = tk.Label(inner, text=details_txt, bg=bg_col, fg="#b4befe", font=("Segoe UI", 7, "bold"))
                 details_lbl.place(relx=0.0, rely=1.0, anchor="sw")
@@ -311,7 +316,14 @@ class Dashboard(ctk.CTk):
                 chk.place(relx=1.0, rely=1.0, anchor="se")
             
             # Sub-widgets list for click binding
-            sub_widgets = [btn_frame, inner, content_lbl, pos_lbl]
+            sub_widgets = [btn_frame, inner, pos_lbl]
+            if not preview_lines:
+                sub_widgets.append(content_lbl)
+            else:
+                sub_widgets.append(v_center)
+                for child in v_center.winfo_children():
+                    sub_widgets.append(child)
+
             if status != "EMPTY":
                 sub_widgets.append(details_lbl)
             if lbl.get("printed"):
