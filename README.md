@@ -4,6 +4,9 @@
 A Windows desktop application for printing on ST-16 A4 label sheets (4×4 grid, 16 labels per sheet).
 Designed to help you reuse partially-used sheets and prevent accidental double-printing.
 
+### 📥 [Download Latest EXE (Windows)](https://github.com/vikasprajapat2/smart_lable_print/raw/main/dist/SmartLabelPrinter.exe)
+*(Simply download and double-click to run! No installation required.)*
+
 ---
 
 ## Features
